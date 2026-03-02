@@ -1,0 +1,14 @@
+/* Minimal online UI styles */
+:root{--bg:#0f0f14;--card:#1e1e28;--accent:#6c3bbf}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:#fff;font-family:Tahoma;display:flex;align-items:center;justify-content:center}
+#root{width:100%;max-width:720px;padding:16px}
+.header{display:flex;justify-content:space-between;align-items:center}
+.card{background:var(--card);padding:12px;border-radius:10px;margin:10px 0}
+.controls{display:flex;gap:8px}
+button{background:var(--accent);border:none;color:#fff;padding:10px;border-radius:8px;cursor:pointer}
+.player-list{display:flex;flex-direction:column;gap:6px}
+.player{display:flex;justify-content:space-between;padding:8px;background:#121217;border-radius:8px}
+.small{font-size:0.9em;opacity:0.9}
+.room-code{font-weight:700;letter-spacing:2px}
+.notice{color:#ffd700}

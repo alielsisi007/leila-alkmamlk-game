@@ -1,0 +1,92 @@
+/* --- Layout & Responsiveness --- */
+html, body {
+  height: 100%;
+  margin: 0;
+}
+body {
+  background: #0f0f14;
+  color: white;
+  font-family: Tahoma, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+}
+
+/* App container fills viewport and centers content */
+#app {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 480px; /* comfortable phone width */
+  height: 100vh; /* use full screen height */
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: center;
+  justify-content: flex-start;
+  overflow-y: auto;
+}
+
+/* Responsive typography */
+body, button, input, select {
+  font-size: clamp(14px, 2.5vw, 16px);
+}
+
+/* Buttons stack nicely and are tappable */
+button {
+  padding: 12px 16px;
+  margin: 6px 0;
+  border: none;
+  border-radius: 10px;
+  background: #6c3bbf;
+  color: white;
+  cursor: pointer;
+  width: 100%;
+  max-width: 420px;
+  box-shadow: 0 6px 14px rgba(0,0,0,0.25);
+}
+
+button.small {
+  width: auto;
+  padding: 8px 12px;
+}
+
+button:hover { opacity: 0.95; }
+
+/* Inputs */
+#inputs { width: 100%; max-width: 420px; display:flex; flex-direction:column; gap:8px; }
+#inputs input { width: 100%; padding: 10px 12px; border-radius:8px; border: 1px solid rgba(255,255,255,0.06); background: rgba(255,255,255,0.02); color: white; }
+
+/* Cards and private boxes expand to width */
+.player-card, .private-box, .role-card-mini { width: 100%; max-width: 420px; box-sizing: border-box; }
+
+.private-box { background: #222; padding: 14px; border-radius: 12px; margin: 6px 0; }
+
+.effects { margin-top: 6px; font-size: 0.95em; opacity: 0.9; }
+
+.fade-in { animation: fadeIn 0.36s ease-in-out; }
+.mini-fade { animation: miniFade 0.32s ease-in-out; }
+
+@keyframes miniFade { from { opacity: 0; transform: scale(0.98);} to { opacity: 1; transform: scale(1);} }
+@keyframes fadeIn { from { opacity: 0; transform: scale(0.99);} to { opacity: 1; transform: scale(1);} }
+
+/* Role card layout */
+.role-card-mini { display:flex; align-items:center; gap:12px; background:#1e1e28; padding:10px 12px; border-radius:12px; margin:8px 0; box-shadow: 0 8px 20px rgba(0,0,0,0.35); }
+.role-card-mini img { width: 56px; height: 56px; object-fit:cover; border-radius:8px; }
+.role-card-mini .role-name { font-size: 1.05rem; font-weight: 700; text-align: left; }
+.role-card-mini .role-emoji { font-size: 1.1rem; opacity: 0.95; }
+
+/* Small screens tweaks */
+@media (max-width: 420px) {
+  #app { padding: 12px; }
+  .role-card-mini img { width: 48px; height: 48px; }
+  button { padding: 12px; }
+}
+
+/* larger screens keep centered but not too wide */
+@media (min-width: 900px) {
+  #app { max-width: 640px; }
+}

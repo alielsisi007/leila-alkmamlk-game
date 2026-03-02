@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ليلة الممالك </title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div id="app"></div>
+
+<script>
+	// Mode selection UI. Local loads existing script.js, Online navigates to client UI.
+	const app = document.getElementById('app');
+	function showModeSelection(){
+		app.innerHTML = `
+			<h2>اختر نمط اللعب</h2>
+			<div style="display:flex;flex-direction:column;gap:12px;max-width:360px;margin:0 auto;">
+					<button id="localBtn">Local Game (مرّر الجهاز)</button>
+					<button id="onlineBtn">Online Game (انضم لغرفة)</button>
+				</div>
+		`;
+		document.getElementById('localBtn').onclick = () => { window.location.href = 'local.html'; };
+		document.getElementById('onlineBtn').onclick = () => { window.location.href = 'client/index.html'; };
+	}
+
+
+	showModeSelection();
+</script>
+</body>
+</html>
