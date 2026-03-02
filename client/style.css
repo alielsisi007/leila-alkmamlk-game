@@ -1,14 +1,70 @@
-/* Minimal online UI styles */
-:root{--bg:#0f0f14;--card:#1e1e28;--accent:#6c3bbf}
+/* Online client styles - Phase based UI */
+:root{
+	--bg:#0b0b0f;
+	--card:#16161b;
+	--muted:#9aa0a6;
+	--accent:#7b4be6;
+	--accent-2:#a87df0;
+}
+*{box-sizing:border-box}
 html,body{height:100%;margin:0}
-body{background:var(--bg);color:#fff;font-family:Tahoma;display:flex;align-items:center;justify-content:center}
-#root{width:100%;max-width:720px;padding:16px}
-.header{display:flex;justify-content:space-between;align-items:center}
-.card{background:var(--card);padding:12px;border-radius:10px;margin:10px 0}
-.controls{display:flex;gap:8px}
-button{background:var(--accent);border:none;color:#fff;padding:10px;border-radius:8px;cursor:pointer}
-.player-list{display:flex;flex-direction:column;gap:6px}
-.player{display:flex;justify-content:space-between;padding:8px;background:#121217;border-radius:8px}
-.small{font-size:0.9em;opacity:0.9}
-.room-code{font-weight:700;letter-spacing:2px}
-.notice{color:#ffd700}
+body{background:var(--bg);color:#fff;font-family:Inter, Tahoma, Arial;direction:rtl}
+#root{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
+.app-shell{width:100%;max-width:980px}
+.panel{background:var(--card);border-radius:12px;padding:18px;margin:12px 0}
+.topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+.room-meta{font-size:14px;color:var(--muted)}
+.room-code{font-weight:700;letter-spacing:3px;color:var(--accent-2)}
+.btn{background:var(--accent);border:none;color:#fff;padding:10px 14px;border-radius:10px;cursor:pointer}
+.btn.ghost{background:transparent;border:1px solid rgba(255,255,255,0.06)}
+.btn.small{padding:6px 8px;font-size:13px}
+.flex{display:flex;align-items:center}
+.player-list{display:flex;flex-direction:column;gap:8px}
+.player{display:flex;justify-content:space-between;padding:10px;background:rgba(255,255,255,0.02);border-radius:10px}
+.player .left{display:flex;align-items:center}
+.player img{width:44px;height:44px;border-radius:8px;margin-left:10px;object-fit:cover}
+.player .meta{font-size:15px}
+.status{font-size:13px;color:var(--muted)}
+
+/* Phase full-screen sections */
+.phase{min-height:60vh;display:flex;align-items:center;justify-content:center}
+.phase-inner{width:100%}
+
+/* Role Reveal Screen */
+.role-card-wrap{display:flex;flex-direction:column;align-items:center;gap:16px}
+.role-card{width:min(520px,90%);min-width:300px;background:linear-gradient(180deg,rgba(255,255,255,0.02),transparent);border-radius:14px;padding:20px;display:flex;flex-direction:column;align-items:center;box-shadow:0 8px 30px rgba(0,0,0,0.6);transform:translateY(8px);opacity:0;animation:fadeInUp .45s ease forwards}
+.role-card h2{margin:6px 0;font-size:26px}
+.role-emoji{font-size:56px}
+.role-desc{margin-top:6px;color:var(--muted);text-align:center}
+.fade-slow{transition:opacity .3s ease,transform .3s ease}
+
+@keyframes fadeInUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+
+/* Night screen */
+.night-board{display:flex;gap:18px;align-items:flex-start}
+.night-left{flex:1}
+.night-right{width:320px}
+.turn-card{background:rgba(255,255,255,0.02);padding:14px;border-radius:12px;text-align:center}
+.turn-title{font-size:20px;margin-bottom:6px}
+.role-compact{font-size:16px;color:var(--muted)}
+
+/* Progress bar */
+.progress{height:10px;background:rgba(255,255,255,0.04);border-radius:10px;overflow:hidden}
+.progress > i{display:block;height:100%;background:linear-gradient(90deg,var(--accent),var(--accent-2));width:0%}
+
+/* Result screen */
+.result-grid{display:flex;flex-direction:column;gap:12px;align-items:center}
+.result-private{background:rgba(255,255,255,0.02);padding:12px;border-radius:10px;width:100%;max-width:680px}
+
+/* Voting */
+.voting-list{display:flex;flex-direction:column;gap:8px}
+.vote-item{display:flex;justify-content:space-between;padding:10px;background:rgba(255,255,255,0.02);border-radius:8px}
+
+/* Responsive */
+@media (max-width:700px){
+	.night-right{display:none}
+	.role-card{min-width:260px}
+}
+
+.muted{color:var(--muted)}
+
