@@ -13,7 +13,6 @@ let publicMsgs = [];
 let gameState = 'login'; // login, lobby, roleReveal, night, result, voting, gameOver
 let roleRevealData = null;
 let nightInfo = { players: [], endsAt: null, nightCount: 0, startedAt: null };
-let currentTurnIndex = 0;
 let phaseProgressInterval = null;
 
 function render(){
@@ -83,7 +82,12 @@ function renderLogin(){
 // --- Lobby ---
 function renderLobby(){
   const wrap = document.createElement('div'); wrap.className = 'panel';
-  const playersHtml = (currentRoom.players||[]).map(p=>`<div class="player"><div class="left"><img src="/cards/${revealedRoles[p.name] || ''}.png" onerror="this.style.display='none'"/><div class="meta">${p.name} ${p.isHost? '👑':''}<div class="status">${p.alive? 'على قيد الحياة':'مقتول'}</div></div></div></div>`).join('');
+  const playersHtml = (currentRoom.players||[]).map(p=>{
+    const knownRole = revealedRoles[p.name] || (p.name === myName ? myRole : '');
+    const cardStyle = knownRole ? ` style="--card-url:url('/cards/${knownRole}.png')"` : '';
+    const cls = `player${knownRole ? ' has-card' : ''}`;
+    return `<div class="${cls}"${cardStyle}><div class="left"><div class="meta">${p.name} ${p.isHost? '👑':''}<div class="status">${p.alive? 'على قيد الحياة':'مقتول'}</div></div></div></div>`;
+  }).join('');
   wrap.innerHTML = `\n    <h3>اللوبي</h3>\n    <div class="player-list">${playersHtml}</div>\n    <div style="margin-top:12px">${isHost()? `<button class="btn" id="startGame">بدء اللعبة</button>` : ''}</div>\n    <div style="margin-top:12px" class="muted">انتظار اللاعبين. ابدأ اللعبة عند جاهزية الجميع.</div>\n  `;
   setTimeout(()=>{
     const btn = wrap.querySelector('#startGame'); if(btn){ btn.onclick = ()=>{ socket.emit('startGame', { code: currentRoom.id }, (res)=>{ if(res?.error) alert(res.error); else { /* hide button locally */ btn.style.display='none'; } }); } }
@@ -131,10 +135,9 @@ function renderNight(){
   title.innerHTML = `<div class="turn-title">الليلة ${nightInfo.nightCount || ''}</div>\n    <div class="progress" style="margin-top:8px"><i id="progressBar"></i></div>\n    <div style="margin-top:8px" class="muted">الوقت المتبقي: <span id="timeLeft">--</span></div>`;
   left.appendChild(title);
 
-  // Current turn area
+  // Simultaneous action area (each player acts in parallel)
   const current = document.createElement('div'); current.className = 'turn-card';
-  const actor = nightInfo.players[currentTurnIndex] || '';
-  current.innerHTML = `<div class="muted">الآن دور:</div><div style="font-weight:700;margin-top:6px">${actor}</div><div id="turnControls" style="margin-top:10px"></div>`;
+  current.innerHTML = `<div class="muted">دورك الآن (الليل متزامن)</div><div id="nightControls" style="margin-top:10px"></div>`;
   left.appendChild(current);
 
   // Right side: player list
@@ -145,60 +148,66 @@ function renderNight(){
   wrap.appendChild(left); wrap.appendChild(right);
 
   // populate controls for current user
-  setTimeout(()=>{ renderTurnControls(); startPhaseProgress(); },10);
+  setTimeout(()=>{ renderNightControls(); startPhaseProgress(); },10);
   return wrap;
 }
 
-function renderTurnControls(){
-  const controls = document.getElementById('turnControls'); if(!controls) return;
-  const actor = nightInfo.players[currentTurnIndex];
+function renderNightControls(){
+  const controls = document.getElementById('nightControls'); if(!controls) return;
   controls.innerHTML = '';
-  // show only for the actor
-  if(actor === myName){
-    // show compact role
-    const roleCompact = document.createElement('div'); roleCompact.className = 'role-compact'; roleCompact.textContent = `دورك: ${myRole} ${myEmoji}`;
-    controls.appendChild(roleCompact);
 
-    // target select
-    const select = document.createElement('select'); select.id = 'targetSelect'; select.style.marginTop = '8px';
-    const alive = (currentRoom.players||[]).filter(p=>p.alive && p.name !== myName).map(p=>p.name);
-    const opt0 = document.createElement('option'); opt0.value=''; opt0.textContent='-- اختر هدف --'; select.appendChild(opt0);
-    alive.forEach(a=>{ const o = document.createElement('option'); o.value=a; o.textContent=a; select.appendChild(o); });
-    controls.appendChild(select);
+  const me = (currentRoom && currentRoom.players) ? currentRoom.players.find(p=>p.name===myName) : null;
+  if(!me){ controls.innerHTML = `<div class="muted">...</div>`; return; }
+  if(!me.alive){ controls.innerHTML = `<div class="muted">أنت ميت ولا يمكنك استخدام قدرة.</div>`; return; }
 
-    // ability select for writer
-    if(myRole === 'كاتب'){
-      const ab = document.createElement('select'); ab.id = 'abilitySelect'; ab.style.marginTop='8px'; ab.innerHTML = `<option value=\"revive\">إحياء</option><option value=\"kill\">قتل</option>`; controls.appendChild(ab);
-    }
+  const roleCompact = document.createElement('div');
+  roleCompact.className = 'role-compact';
+  roleCompact.textContent = `دورك: ${myRole} ${myEmoji}`;
+  controls.appendChild(roleCompact);
 
-    const btn = document.createElement('button'); btn.className='btn'; btn.textContent='تنفيذ'; btn.style.marginTop='8px';
-    btn.onclick = ()=>{
-      const target = select.value; const ability = document.getElementById('abilitySelect')? document.getElementById('abilitySelect').value : undefined;
-      if(!target){ alert('اختر هدفاً'); return; }
-      socket.emit('playerAction', { code: currentRoom.id, actorName: myName, targetName: target, ability }, (res)=>{
-        if(res?.error) return alert(res.error);
-        // lock UI for actor
-        btn.disabled = true; select.disabled = true; if(document.getElementById('abilitySelect')) document.getElementById('abilitySelect').disabled = true;
-        // advance turn immediately
-        advanceTurn();
-      });
-    };
-    controls.appendChild(btn);
-  } else {
-    controls.innerHTML = `<div class="muted">انتظر دور ${actor}...</div>`;
+  const alreadyUsed = !!me.actionUsed;
+  if(alreadyUsed){
+    const done = document.createElement('div');
+    done.className = 'muted';
+    done.style.marginTop = '8px';
+    done.textContent = 'لقد قمت بإرسال فعلك لهذه الليلة.';
+    controls.appendChild(done);
+    return;
   }
-}
 
-function advanceTurn(){
-  // advance to next alive player
-  const players = nightInfo.players || [];
-  const len = players.length; if(len===0) return;
-  let i = currentTurnIndex;
-  for(let k=1;k<=len;k++){
-    const nxt = (i + k) % len; const name = players[nxt]; const p = (currentRoom.players||[]).find(x=>x.name===name);
-    if(p && p.alive){ currentTurnIndex = nxt; render(); return; }
+  const select = document.createElement('select');
+  select.id = 'targetSelect';
+  select.style.marginTop = '8px';
+  const aliveTargets = (currentRoom.players||[]).filter(p=>p.alive && p.name !== myName).map(p=>p.name);
+  const opt0 = document.createElement('option'); opt0.value=''; opt0.textContent='-- اختر هدف --'; select.appendChild(opt0);
+  aliveTargets.forEach(a=>{ const o = document.createElement('option'); o.value=a; o.textContent=a; select.appendChild(o); });
+  controls.appendChild(select);
+
+  if(myRole === 'كاتب'){
+    const ab = document.createElement('select');
+    ab.id = 'abilitySelect';
+    ab.style.marginTop='8px';
+    ab.innerHTML = `<option value="revive">إحياء</option><option value="kill">قتل</option>`;
+    controls.appendChild(ab);
   }
-  // no alive found: end
+
+  const btn = document.createElement('button');
+  btn.className='btn';
+  btn.textContent='تأكيد الفعل';
+  btn.style.marginTop='8px';
+  btn.onclick = ()=>{
+    const target = select.value;
+    const ability = document.getElementById('abilitySelect') ? document.getElementById('abilitySelect').value : undefined;
+    if(!target){ alert('اختر هدفاً'); return; }
+    socket.emit('playerAction', { code: currentRoom.id, actorName: myName, targetName: target, ability }, (res)=>{
+      if(res?.error) return alert(res.error);
+      btn.disabled = true;
+      select.disabled = true;
+      if(document.getElementById('abilitySelect')) document.getElementById('abilitySelect').disabled = true;
+      // rely on server roomState to mark actionUsed and re-render
+    });
+  };
+  controls.appendChild(btn);
 }
 
 function startPhaseProgress(){
@@ -251,7 +260,15 @@ function renderGameOver(){ const wrap = document.createElement('div'); wrap.clas
 // socket handlers
 socket.on('roomState', (room)=>{ currentRoom = room; if(!currentRoom) return; if(gameState==='login') gameState='lobby'; render(); });
 socket.on('roleReveal', ({ role, emoji, team })=>{ myRole = role; myEmoji = emoji; myTeam = team; roleRevealData = { role, emoji, team }; gameState = 'roleReveal'; render(); });
-socket.on('startNight', ({ seconds, players })=>{ nightInfo.players = players; nightInfo.endsAt = Date.now() + (seconds||30)*1000; nightInfo.startedAt = Date.now(); nightInfo.nightCount = (currentRoom && currentRoom.nightCount) || nightInfo.nightCount; currentTurnIndex = 0; gameState = 'night'; render(); });
+socket.on('startNight', ({ seconds, players, nightCount })=>{
+  if(players && Array.isArray(players)) nightInfo.players = players;
+  else nightInfo.players = (currentRoom?.players || []).filter(p=>p.alive).map(p=>p.name);
+  nightInfo.endsAt = Date.now() + (seconds||30)*1000;
+  nightInfo.startedAt = Date.now();
+  nightInfo.nightCount = nightCount || (currentRoom && currentRoom.nightCount) || nightInfo.nightCount;
+  gameState = 'night';
+  render();
+});
 socket.on('nightResultPrivate', ({ msgs })=>{ privateMsgs = msgs || []; });
 socket.on('nightResolved', ({ deaths, publicMsgs: pub })=>{ if(pub) publicMsgs = pub; if(deaths && deaths.length) publicMsgs = publicMsgs.concat(deaths.map(d=>`${d} توفي`)); });
 socket.on('startRevealTimer', ({ seconds })=>{ /* server will trigger revealNow after countdown */ });

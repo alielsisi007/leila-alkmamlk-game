@@ -20,11 +20,36 @@ body{background:var(--bg);color:#fff;font-family:Inter, Tahoma, Arial;direction:
 .btn.small{padding:6px 8px;font-size:13px}
 .flex{display:flex;align-items:center}
 .player-list{display:flex;flex-direction:column;gap:8px}
-.player{display:flex;justify-content:space-between;padding:10px;background:rgba(255,255,255,0.02);border-radius:10px}
+.player{display:flex;justify-content:space-between;padding:10px;background:rgba(255,255,255,0.02);border-radius:10px;position:relative;overflow:hidden}
 .player .left{display:flex;align-items:center}
 .player img{width:44px;height:44px;border-radius:8px;margin-left:10px;object-fit:cover}
 .player .meta{font-size:15px}
 .status{font-size:13px;color:var(--muted)}
+
+/* Role card background behind player (only when role is known) */
+.player.has-card::before{
+	content:"";
+	position:absolute;
+	inset:0;
+	background-image:var(--card-url);
+	background-repeat:no-repeat;
+	background-position:center;
+	background-size:120px auto; /* mid size */
+	opacity:.18;
+	filter:saturate(1.1) contrast(1.05);
+	pointer-events:none;
+}
+.player.has-card::after{
+	content:"";
+	position:absolute;
+	inset:0;
+	background:linear-gradient(90deg, rgba(22,22,27,0.78), rgba(22,22,27,0.55));
+	pointer-events:none;
+}
+.player.has-card > *{
+	position:relative;
+	z-index:1;
+}
 
 /* Phase full-screen sections */
 .phase{min-height:60vh;display:flex;align-items:center;justify-content:center}
